@@ -7,6 +7,8 @@
  * @copyright : Copyright (c) 2023 huenrong
  *
  * @history   : date       author          description
+ *              2023-02-05 huenrong        1. 删除无用变量
+ *                                         2. 修改函数调用错误问题
  *              2023-01-18 huenrong        创建文件
  *
  */
@@ -282,7 +284,6 @@ bool serial_open(const char *serial_dev_name, const serial_baud_rate_e std_baud_
                  const serial_stop_bit_e stop_bit)
 {
     int fd = -1;
-    int ret = -1;
     // 串口信息
     serial_dev_info_t serial_dev_info = {0};
     // 串口属性
@@ -303,7 +304,7 @@ bool serial_open(const char *serial_dev_name, const serial_baud_rate_e std_baud_
     if (serial_find_dev_info(&serial_dev_info, serial_dev_name))
     {
         // 关闭串口
-        close_serial(serial_dev_info.serial_dev_name);
+        serial_close(serial_dev_info.serial_dev_name);
     }
 
     // 打开串口
