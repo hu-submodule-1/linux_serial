@@ -22,6 +22,7 @@
 #include <pthread.h>
 #include <linux/serial.h>
 #include <sys/ioctl.h>
+#include <assert.h>
 
 #include "./serial.h"
 
@@ -53,12 +54,9 @@ static serial_dev_info_t g_serial_dev_info[SERIAL_DEV_MAX_NUM];
  */
 static bool serial_find_dev_info(serial_dev_info_t *serial_dev_info, const char *serial_dev_name)
 {
-    int ret = -1;
+    assert((serial_dev_info != NULL) && (serial_dev_name != NULL));
 
-    if ((!serial_dev_name) || (!serial_dev_info))
-    {
-        return false;
-    }
+    int ret = -1;
 
     for (uint8_t i = 0; i < g_serial_dev_num; i++)
     {
@@ -83,10 +81,7 @@ static bool serial_find_dev_info(serial_dev_info_t *serial_dev_info, const char 
  */
 static bool serial_set_std_baud_rate(struct termios *options, const serial_baud_rate_e baud_rate)
 {
-    if (!options)
-    {
-        return false;
-    }
+    assert(options != NULL);
 
     // 设置输入波特率
     if (0 != cfsetispeed(options, baud_rate))
@@ -113,12 +108,9 @@ static bool serial_set_std_baud_rate(struct termios *options, const serial_baud_
  */
 static bool serial_set_special_baud_rate(struct termios *options, const int fd, const int baud_rate)
 {
-    struct serial_struct serial = {0};
+    assert(options != NULL);
 
-    if (!options)
-    {
-        return false;
-    }
+    struct serial_struct serial = {0};
 
     // 设置波特率为38400
     if (0 != cfsetispeed(options, B38400))
@@ -151,35 +143,23 @@ static bool serial_set_special_baud_rate(struct termios *options, const int fd, 
  * @brief  设置串口数据位
  * @param  options : 输出参数, 串口属性
  * @param  data_bit: 输入参数, 数据位
- * @return true : 成功
- * @return false: 失败
  */
-static bool serial_set_data_bit(struct termios *options, const serial_data_bit_e data_bit)
+static void serial_set_data_bit(struct termios *options, const serial_data_bit_e data_bit)
 {
-    if (!options)
-    {
-        return false;
-    }
+    assert(options != NULL);
 
     options->c_cflag &= ~CSIZE;
     options->c_cflag |= data_bit;
-
-    return true;
 }
 
 /**
  * @brief  设置串口奇偶检验位
  * @param  options   : 输出参数, 串口属性
  * @param  parity_bit: 输入参数, 奇偶检验位, 默认为无校验'n'或'N'
- * @return true : 成功
- * @return false: 失败
  */
-static bool serial_set_parity_bit(struct termios *options, const serial_parity_bit_e parity_bit)
+static void serial_set_parity_bit(struct termios *options, const serial_parity_bit_e parity_bit)
 {
-    if (!options)
-    {
-        return false;
-    }
+    assert(options != NULL);
 
     switch (parity_bit)
     {
@@ -220,23 +200,16 @@ static bool serial_set_parity_bit(struct termios *options, const serial_parity_b
         break;
     }
     }
-
-    return true;
 }
 
 /**
  * @brief  设置串口停止位
  * @param  options : 输出参数, 串口属性
  * @param  stop_bit: 输入参数, 停止位, 默认为1位停止位
- * @return true : 成功
- * @return false: 失败
  */
-static bool serial_set_stop_bit(struct termios *options, const serial_stop_bit_e stop_bit)
+static void serial_set_stop_bit(struct termios *options, const serial_stop_bit_e stop_bit)
 {
-    if (!options)
-    {
-        return false;
-    }
+    assert(options != NULL);
 
     switch (stop_bit)
     {
@@ -264,8 +237,6 @@ static bool serial_set_stop_bit(struct termios *options, const serial_stop_bit_e
         break;
     }
     }
-
-    return true;
 }
 
 /**
@@ -283,16 +254,13 @@ bool serial_open(const char *serial_dev_name, const serial_baud_rate_e std_baud_
                  const serial_data_bit_e data_bit, const serial_parity_bit_e parity_bit,
                  const serial_stop_bit_e stop_bit)
 {
+    assert(serial_dev_name != NULL);
+
     int fd = -1;
     // 串口信息
     serial_dev_info_t serial_dev_info = {0};
     // 串口属性
     struct termios options = {0};
-
-    if (!serial_dev_name)
-    {
-        return false;
-    }
 
     // 超过支持的串口数量, 直接返回错误
     if (g_serial_dev_num > SERIAL_DEV_MAX_NUM)
@@ -343,28 +311,13 @@ bool serial_open(const char *serial_dev_name, const serial_baud_rate_e std_baud_
     }
 
     // 设置数据位
-    if (!serial_set_data_bit(&options, data_bit))
-    {
-        close(fd);
-
-        return false;
-    }
+    serial_set_data_bit(&options, data_bit);
 
     // 设置奇偶检验位
-    if (!serial_set_parity_bit(&options, parity_bit))
-    {
-        close(fd);
-
-        return false;
-    }
+    serial_set_parity_bit(&options, parity_bit);
 
     // 设置停止位
-    if (!serial_set_stop_bit(&options, stop_bit))
-    {
-        close(fd);
-
-        return false;
-    }
+    serial_set_stop_bit(&options, stop_bit);
 
     // 一般必设置的标志
     options.c_cflag |= (CLOCAL | CREAD);
@@ -414,12 +367,9 @@ bool serial_open(const char *serial_dev_name, const serial_baud_rate_e std_baud_
  */
 bool serial_close(const char *serial_dev_name)
 {
-    int ret = -1;
+    assert(serial_dev_name != NULL);
 
-    if (!serial_dev_name)
-    {
-        return false;
-    }
+    int ret = -1;
 
     for (uint8_t i = 0; i < g_serial_dev_num; i++)
     {
@@ -468,13 +418,10 @@ bool serial_close(const char *serial_dev_name)
  */
 bool serial_flush_input_cache(const char *serial_dev_name)
 {
+    assert(serial_dev_name != NULL);
+
     // 串口信息
     serial_dev_info_t serial_dev_info = {0};
-
-    if (!serial_dev_name)
-    {
-        return false;
-    }
 
     // 串口未打开, 直接返回成功
     if (!serial_find_dev_info(&serial_dev_info, serial_dev_name))
@@ -504,13 +451,10 @@ bool serial_flush_input_cache(const char *serial_dev_name)
  */
 bool serial_flush_output_cache(const char *serial_dev_name)
 {
+    assert(serial_dev_name != NULL);
+
     // 串口信息
     serial_dev_info_t serial_dev_info = {0};
-
-    if (!serial_dev_name)
-    {
-        return false;
-    }
 
     // 串口未打开, 直接返回成功
     if (!serial_find_dev_info(&serial_dev_info, serial_dev_name))
@@ -540,13 +484,10 @@ bool serial_flush_output_cache(const char *serial_dev_name)
  */
 bool serial_flush_both_cache(const char *serial_dev_name)
 {
+    assert(serial_dev_name != NULL);
+
     // 串口信息
     serial_dev_info_t serial_dev_info = {0};
-
-    if (!serial_dev_name)
-    {
-        return false;
-    }
 
     // 串口未打开, 直接返回成功
     if (!serial_find_dev_info(&serial_dev_info, serial_dev_name))
@@ -578,14 +519,11 @@ bool serial_flush_both_cache(const char *serial_dev_name)
  */
 int serial_write_data(const char *serial_dev_name, const uint8_t *send_data, const uint32_t send_data_len)
 {
+    assert((serial_dev_name != NULL) && (send_data != NULL) && (send_data_len > 0));
+
     int ret = -1;
     // 串口信息
     serial_dev_info_t serial_dev_info = {0};
-
-    if ((!serial_dev_name) || (!send_data))
-    {
-        return -1;
-    }
 
     // 串口未打开, 直接返回失败
     if (!serial_find_dev_info(&serial_dev_info, serial_dev_name))
@@ -613,6 +551,8 @@ int serial_write_data(const char *serial_dev_name, const uint8_t *send_data, con
  */
 int serial_read_data(uint8_t *recv_data, const char *serial_dev_name, const size_t recv_data_len, uint32_t timeout)
 {
+    assert((recv_data != NULL) && (serial_dev_name != NULL) && (recv_data_len > 0));
+
     int ret = -1;
     // 指定fds数组中的项目数
     nfds_t nfds = 1;
@@ -624,11 +564,6 @@ int serial_read_data(uint8_t *recv_data, const char *serial_dev_name, const size
     size_t remain_data_len = 0;
     // 串口信息
     serial_dev_info_t serial_dev_info = {0};
-
-    if ((!serial_dev_name) || (!recv_data))
-    {
-        return -1;
-    }
 
     // 串口未打开, 直接返回失败
     if (!serial_find_dev_info(&serial_dev_info, serial_dev_name))
